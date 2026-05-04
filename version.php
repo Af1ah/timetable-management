@@ -24,7 +24,8 @@
 
 defined('MOODLE_INTERNAL') || die();
 
-$plugin->component = 'local_semester_management';
+$plugin->component = 'local_timetable
+_management';
 $plugin->version = 2026050200;
 $plugin->requires = 2024042200;
 $plugin->maturity = MATURITY_STABLE;
