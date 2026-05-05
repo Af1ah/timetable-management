@@ -2,3 +2,5 @@ CLAUDE.md
 .agents
 .claude
 .codex
+*.png
+*.jpg

@@ -1644,6 +1644,345 @@ class manager {
     }
 
     /**
+     * Generate attendance sessions from timetable entries for a date range.
+     *
+     * @param int $departmentid
+     * @param int $startdate
+     * @param int $durationdays
+     * @return object
+     */
+    public static function sync_department_attendance_sessions(
+        int $departmentid,
+        int $startdate,
+        int $durationdays
+    ): object {
+        global $CFG, $DB;
+
+        if (!self::is_attendance_plugin_available()) {
+            throw new \moodle_exception('attendancepluginmissing', 'local_timetable_management');
+        }
+
+        require_once($CFG->dirroot . '/mod/attendance/externallib.php');
+
+        $summary = (object) [
+            'coursesprocessed' => 0,
+            'attendancecreated' => 0,
+            'sessioncandidates' => 0,
+            'sessionscreated' => 0,
+            'duplicateskipped' => 0,
+            'timeskipped' => 0,
+            'errors' => [],
+        ];
+
+        $durationdays = max(1, $durationdays);
+        $entries = self::get_department_timetable_entries($departmentid);
+        if (empty($entries)) {
+            return $summary;
+        }
+
+        $programs = self::get_department_active_programs($departmentid);
+        if (empty($programs)) {
+            return $summary;
+        }
+
+        $config = self::get_global_timetable_config();
+        $schedulebycourse = self::build_attendance_schedule_by_course(
+            $entries,
+            $programs,
+            $config->workingdays,
+            $config->sectiontimes,
+            $startdate,
+            $durationdays
+        );
+
+        if (empty($schedulebycourse)) {
+            return $summary;
+        }
+
+        foreach ($schedulebycourse as $courseid => $sessions) {
+            if (empty($sessions)) {
+                continue;
+            }
+
+            $course = $DB->get_record('course', ['id' => $courseid], 'id, fullname', IGNORE_MISSING);
+            if (!$course) {
+                $summary->errors[] = get_string('attendancecoursemissing', 'local_timetable_management', $courseid);
+                continue;
+            }
+
+            try {
+                $attendance = self::get_or_create_course_attendance_instance($courseid);
+                $summary->coursesprocessed++;
+                if (!empty($attendance->created)) {
+                    $summary->attendancecreated++;
+                }
+
+                $existingsessions = self::get_existing_attendance_session_times(
+                    (int) $attendance->attendanceid,
+                    array_map(static function(object $session): int {
+                        return (int) $session->sessiontime;
+                    }, $sessions)
+                );
+
+                foreach ($sessions as $session) {
+                    $summary->sessioncandidates++;
+                    if (isset($existingsessions[$session->sessiontime])) {
+                        $summary->duplicateskipped++;
+                        continue;
+                    }
+
+                    \mod_attendance_external::add_session(
+                        (int) $attendance->attendanceid,
+                        $session->description,
+                        (int) $session->sessiontime,
+                        (int) $session->duration,
+                        0,
+                        true
+                    );
+
+                    $summary->sessionscreated++;
+                    $existingsessions[$session->sessiontime] = true;
+                }
+            } catch (\Throwable $e) {
+                $a = (object) [
+                    'course' => format_string($course->fullname),
+                    'message' => s($e->getMessage()),
+                ];
+                $summary->errors[] = get_string('attendancecourseerror', 'local_timetable_management', $a);
+            }
+        }
+
+        return $summary;
+    }
+
+    /**
+     * Check whether the attendance activity plugin is installed.
+     *
+     * @return bool
+     */
+    public static function is_attendance_plugin_available(): bool {
+        return \core_component::get_plugin_directory('mod', 'attendance') !== null;
+    }
+
+    /**
+     * Build attendance sessions grouped by course.
+     *
+     * @param array $entries
+     * @param array $programs
+     * @param array $workingdays
+     * @param array $sectiontimes
+     * @param int $startdate
+     * @param int $durationdays
+     * @return array
+     */
+    private static function build_attendance_schedule_by_course(
+        array $entries,
+        array $programs,
+        array $workingdays,
+        array $sectiontimes,
+        int $startdate,
+        int $durationdays
+    ): array {
+        $schedule = [];
+        $dates = self::get_timetable_dates_in_range($workingdays, $startdate, $durationdays);
+
+        foreach ($dates as $dateinfo) {
+            $weekday = $dateinfo['weekday'];
+            $daystart = $dateinfo['midnight'];
+
+            if (empty($entries[$weekday])) {
+                continue;
+            }
+
+            foreach ($programs as $programid => $program) {
+                if (empty($entries[$weekday][$programid])) {
+                    continue;
+                }
+
+                foreach ($entries[$weekday][$programid] as $sessionindex => $entry) {
+                    $courseid = (int) ($entry->courseid ?? 0);
+                    if ($courseid <= 0) {
+                        continue;
+                    }
+
+                    $slot = $sectiontimes[$weekday - 1][$sessionindex - 1] ?? [];
+                    $frommins = self::parse_time_to_minutes((string) ($slot['from'] ?? ''));
+                    $tomins = self::parse_time_to_minutes((string) ($slot['to'] ?? ''));
+                    if ($frommins < 0 || $tomins <= $frommins) {
+                        continue;
+                    }
+
+                    $sessiontime = $daystart + ($frommins * MINSECS);
+                    $schedule[$courseid][$sessiontime] = (object) [
+                        'sessiontime' => $sessiontime,
+                        'duration' => ($tomins - $frommins) * MINSECS,
+                        'description' => get_string('attendancehourlabel', 'local_timetable_management', $sessionindex),
+                    ];
+                }
+            }
+        }
+
+        foreach ($schedule as $courseid => $sessions) {
+            ksort($sessions);
+            $schedule[$courseid] = array_values($sessions);
+        }
+
+        return $schedule;
+    }
+
+    /**
+     * Resolve which timetable weekdays should be used in a date range.
+     *
+     * @param array $workingdays
+     * @param int $startdate
+     * @param int $durationdays
+     * @return array
+     */
+    private static function get_timetable_dates_in_range(array $workingdays, int $startdate, int $durationdays): array {
+        $dates = [];
+        $startmidnight = usergetmidnight($startdate);
+        $mappedweekdays = self::map_working_days_to_weekdays($workingdays);
+        $hasweekdaymap = in_array(true, array_map(static function($value): bool {
+            return $value !== null;
+        }, $mappedweekdays), true);
+
+        for ($offset = 0; $offset < $durationdays; $offset++) {
+            $currentmidnight = $startmidnight + ($offset * DAYSECS);
+            $calendarweekday = (int) userdate($currentmidnight, '%u');
+            $timetableweekday = null;
+
+            if ($hasweekdaymap) {
+                $matchedindex = array_search($calendarweekday, $mappedweekdays, true);
+                if ($matchedindex !== false) {
+                    $timetableweekday = $matchedindex + 1;
+                }
+            } else if (!empty($workingdays)) {
+                $timetableweekday = ($offset % count($workingdays)) + 1;
+            }
+
+            if ($timetableweekday === null) {
+                continue;
+            }
+
+            $dates[] = [
+                'weekday' => $timetableweekday,
+                'midnight' => $currentmidnight,
+            ];
+        }
+
+        return $dates;
+    }
+
+    /**
+     * Map configured working day labels to ISO weekday numbers where possible.
+     *
+     * @param array $workingdays
+     * @return array
+     */
+    private static function map_working_days_to_weekdays(array $workingdays): array {
+        $labels = [
+            'monday' => 1,
+            'mon' => 1,
+            'tuesday' => 2,
+            'tue' => 2,
+            'tues' => 2,
+            'wednesday' => 3,
+            'wed' => 3,
+            'thursday' => 4,
+            'thu' => 4,
+            'thur' => 4,
+            'thurdsay' => 4,
+            'thurs' => 4,
+            'friday' => 5,
+            'fri' => 5,
+            'saturday' => 6,
+            'sat' => 6,
+            'sunday' => 7,
+            'sun' => 7,
+        ];
+
+        $mapped = [];
+        foreach ($workingdays as $label) {
+            $normalised = \core_text::strtolower(trim((string) $label));
+            $mapped[] = $labels[$normalised] ?? null;
+        }
+
+        return $mapped;
+    }
+
+    /**
+     * Get the first attendance instance in a course or create one if missing.
+     *
+     * @param int $courseid
+     * @return object
+     */
+    private static function get_or_create_course_attendance_instance(int $courseid): object {
+        global $CFG, $DB;
+
+        require_once($CFG->dirroot . '/mod/attendance/externallib.php');
+
+        $sql = "SELECT a.id AS attendanceid, cm.id AS cmid
+                  FROM {attendance} a
+                  JOIN {course_modules} cm
+                    ON cm.instance = a.id
+                  JOIN {modules} m
+                    ON m.id = cm.module
+                 WHERE a.course = :courseid
+                   AND m.name = :modname
+              ORDER BY cm.id ASC";
+        $record = $DB->get_record_sql($sql, ['courseid' => $courseid, 'modname' => 'attendance']);
+        if ($record) {
+            $record->created = false;
+            return $record;
+        }
+
+        $created = \mod_attendance_external::add_attendance(
+            $courseid,
+            get_string('modulename', 'attendance'),
+            '',
+            NOGROUPS
+        );
+
+        $record = $DB->get_record('attendance', ['id' => $created['attendanceid']], 'id', MUST_EXIST);
+        $record->attendanceid = (int) $record->id;
+        unset($record->id);
+        $cm = get_coursemodule_from_instance('attendance', $record->attendanceid, $courseid, false, MUST_EXIST);
+        $record->cmid = $cm->id;
+        $record->created = true;
+
+        return $record;
+    }
+
+    /**
+     * Get existing attendance session timestamps.
+     *
+     * @param int $attendanceid
+     * @param array $sessiontimes
+     * @return array
+     */
+    private static function get_existing_attendance_session_times(int $attendanceid, array $sessiontimes): array {
+        global $DB;
+
+        if (empty($sessiontimes)) {
+            return [];
+        }
+
+        [$insql, $params] = $DB->get_in_or_equal($sessiontimes, SQL_PARAMS_NAMED);
+        $params['attendanceid'] = $attendanceid;
+        $sql = "SELECT sessdate
+                  FROM {attendance_sessions}
+                 WHERE attendanceid = :attendanceid
+                   AND sessdate {$insql}";
+
+        $existing = [];
+        foreach ($DB->get_fieldset_sql($sql, $params) as $sessdate) {
+            $existing[(int) $sessdate] = true;
+        }
+
+        return $existing;
+    }
+
+    /**
      * Get courses within a specific semester category tree.
      *
      * @param int $categoryid

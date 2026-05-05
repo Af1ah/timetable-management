@@ -20,7 +20,8 @@ class department_timetable_page implements renderable, templatable {
         private readonly bool $hasmasterslots,
         private readonly bool $showdepartmentwarning,
         private readonly moodle_url $backurl,
-        private readonly moodle_url $baseurl
+        private readonly moodle_url $baseurl,
+        private readonly moodle_url $attendanceurl
     ) {
     }
 
@@ -94,6 +95,7 @@ class department_timetable_page implements renderable, templatable {
             'hasrows' => !empty($rows),
             'isediting' => $this->isediting,
             'formaction' => $this->baseurl->out(false),
+            'attendanceurl' => $this->attendanceurl->out(false),
             'sesskey' => sesskey(),
             'headers' => $headers,
             'rows' => $rows,

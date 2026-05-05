@@ -30,6 +30,5 @@ $plugin->requires = 2024042200;
 $plugin->maturity = MATURITY_STABLE;
 $plugin->release = '1.0.0';
 $plugin->dependencies = [
-    'mod_attendance'  => 2026042100,
     'local_admission' => 2026041701,
 ];

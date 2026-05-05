@@ -202,7 +202,44 @@ function local_timetable_management_output_pdf(string $departmentname, array $ma
     exit;
 }
 
-$departmentid = required_param('departmentid', PARAM_INT);
+/**
+ * Resolve the timetable department category for the current HOD.
+ *
+ * @param int $userid
+ * @return int
+ */
+function local_timetable_management_resolve_hod_departmentid(int $userid): int {
+    global $DB;
+
+    $hoddepartments = $DB->get_records('local_admission_departments', [
+        'hodid' => $userid,
+        'enabled' => 1,
+    ]);
+
+    if (empty($hoddepartments)) {
+        return 0;
+    }
+
+    $departmentnames = [];
+    foreach ($hoddepartments as $hoddepartment) {
+        $name = manager::normalise_matching_text((string) ($hoddepartment->name ?? ''));
+        if ($name !== '') {
+            $departmentnames[$name] = true;
+        }
+    }
+
+    $timetabledepartments = manager::get_timetable_departments();
+    foreach ($timetabledepartments as $department) {
+        $departmentname = manager::normalise_matching_text((string) $department->name);
+        if ($departmentname !== '' && isset($departmentnames[$departmentname])) {
+            return (int) $department->id;
+        }
+    }
+
+    return 0;
+}
+
+$departmentid = optional_param('departmentid', 0, PARAM_INT);
 $action = optional_param('action', '', PARAM_ALPHA);
 $download = optional_param('download', '', PARAM_ALPHA);
 
@@ -210,6 +247,19 @@ require_login();
 
 $context = context_system::instance();
 $canmanage = has_capability('local/timetable_management:manage', $context);
+
+if (!$departmentid) {
+    $hoddepartmentid = local_timetable_management_resolve_hod_departmentid((int) $USER->id);
+    if ($hoddepartmentid) {
+        $departmentid = $hoddepartmentid;
+    }
+    if (!$departmentid && $canmanage) {
+        redirect(new moodle_url('/local/timetable_management/timetable.php'));
+    }
+    if (!$departmentid) {
+        throw new required_capability_exception($context, 'local/timetable_management:manage', 'nopermissions', '');
+    }
+}
 
 $department = $DB->get_record('course_categories', ['id' => $departmentid], '*', MUST_EXIST);
 $admissiondepartment = manager::get_admission_department_for_category($departmentid);
@@ -321,6 +371,7 @@ echo $output->render(new \local_timetable_management\output\department_timetable
     !empty($masterslots),
     !$admissiondepartment && !$canmanage,
     $backurl,
-    $baseurl
+    $baseurl,
+    new moodle_url('/local/timetable_management/attendance_sessions.php', ['departmentid' => $departmentid])
 ));
 echo $OUTPUT->footer();
