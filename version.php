@@ -17,16 +17,19 @@
 /**
  * Plugin version information.
  *
- * @package    local_semester_management
+ * @package    local_timetable_management
  * @copyright  2026 Your Name
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
 defined('MOODLE_INTERNAL') || die();
 
-$plugin->component = 'local_timetable
-_management';
-$plugin->version = 2026050200;
+$plugin->component = 'local_timetable_management';
+$plugin->version = 2026050405;
 $plugin->requires = 2024042200;
 $plugin->maturity = MATURITY_STABLE;
 $plugin->release = '1.0.0';
+$plugin->dependencies = [
+    'mod_attendance'  => 2026042100,
+    'local_admission' => 2026041701,
+];

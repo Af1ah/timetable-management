@@ -1,0 +1,140 @@
+{{!
+    @template local_timetable_management/department_timetable_page
+}}
+<div class="local-tt-page">
+
+<div class="mb-3 d-flex flex-wrap gap-2">
+    <a href="{{backurl}}" class="btn btn-secondary">{{#str}} back, local_timetable_management {{/str}}</a>
+    <a href="{{csvurl}}" class="btn btn-outline-primary">{{#str}} downloadcsv, local_timetable_management {{/str}}</a>
+    <a href="{{pdfurl}}" class="btn btn-outline-primary">{{#str}} downloadpdf, local_timetable_management {{/str}}</a>
+</div>
+
+{{#showdepartmentwarning}}
+<div class="alert alert-warning" role="alert">
+    {{#str}} departmentnotmapped, local_timetable_management {{/str}}
+</div>
+{{/showdepartmentwarning}}
+
+{{#showmasterinfo}}
+<div class="alert alert-info" role="alert">
+    {{#str}} mastertimedepartmenthelp, local_timetable_management {{/str}}
+</div>
+{{/showmasterinfo}}
+
+{{^hasrows}}
+<div class="alert alert-info" role="alert">
+    {{#str}} noprogramsindepartment, local_timetable_management {{/str}}
+</div>
+{{/hasrows}}
+
+{{#hasrows}}
+    {{#isediting}}
+    {{#datalists}}
+    <datalist id="{{id}}">
+        {{#options}}
+        <option value="{{value}}" data-courseid="{{courseid}}"></option>
+        {{/options}}
+    </datalist>
+    {{/datalists}}
+
+    <form method="post" action="{{formaction}}">
+        <input type="hidden" name="sesskey" value="{{sesskey}}">
+        <input type="hidden" name="action" value="savetable">
+    {{/isediting}}
+
+    <div class="local-tt-table-wrap local-tt-dept-table table-responsive">
+        <table class="table table-bordered table-striped align-middle">
+            <thead>
+                <tr>
+                    <th scope="col">{{#str}} weekday, local_timetable_management {{/str}}</th>
+                    <th scope="col">{{#str}} programsemester, local_timetable_management {{/str}}</th>
+                    {{#headers}}
+                    <th scope="col">{{{labelhtml}}}</th>
+                    {{/headers}}
+                </tr>
+            </thead>
+            <tbody>
+                {{#rows}}
+                <tr>
+                    {{#showdaylabel}}
+                    <td rowspan="{{dayrowspan}}">{{daylabel}}</td>
+                    {{/showdaylabel}}
+                    <td>{{programname}}</td>
+                    {{#cells}}
+                    <td>
+                        {{#isediting}}
+                            {{#reserved}}
+                            <span class="badge bg-secondary" title="{{reservedtooltip}}">{{reservedlabel}}</span>
+                            <input type="hidden" name="{{hiddenname}}" value="">
+                            {{/reserved}}
+                            {{^reserved}}
+                            <input type="search"
+                                   value="{{inputvalue}}"
+                                   list="{{listid}}"
+                                   class="form-control timetable-course-input"
+                                   data-hiddenid="{{hiddenid}}"
+                                   data-listid="{{listid}}"
+                                   placeholder="{{#str}} searchcourse, local_timetable_management {{/str}}"
+                                   title="{{coursetitle}}">
+                            <input type="hidden" name="{{hiddenname}}" value="{{hiddenvalue}}" id="{{hiddenid}}">
+                            {{/reserved}}
+                        {{/isediting}}
+                        {{^isediting}}
+                            {{#reserved}}
+                            <span title="{{reservedtooltip}}">{{reservedlabel}}</span>
+                            {{/reserved}}
+                            {{^reserved}}
+                                {{#courseshortname}}
+                                <span title="{{coursetitle}}">{{courseshortname}}</span>
+                                {{/courseshortname}}
+                                {{^courseshortname}}-{{/courseshortname}}
+                            {{/reserved}}
+                        {{/isediting}}
+                    </td>
+                    {{/cells}}
+                </tr>
+                {{/rows}}
+            </tbody>
+        </table>
+    </div>
+
+    {{#isediting}}
+    <button type="submit" class="btn btn-success">{{#str}} savetimetable, local_timetable_management {{/str}}</button>
+    </form>
+    {{/isediting}}
+{{/hasrows}}
+
+</div>
+
+{{#js}}
+require([], function() {
+    var inputs = document.querySelectorAll('.timetable-course-input');
+
+    function syncInput(input) {
+        var hidden = document.getElementById(input.dataset.hiddenid);
+        var list = document.getElementById(input.dataset.listid);
+        var match = null;
+
+        if (!hidden || !list) {
+            return;
+        }
+
+        Array.prototype.forEach.call(list.options, function(option) {
+            if (option.value === input.value) {
+                match = option;
+            }
+        });
+
+        hidden.value = match ? (match.dataset.courseid || '') : '';
+    }
+
+    Array.prototype.forEach.call(inputs, function(input) {
+        input.addEventListener('input', function() {
+            syncInput(input);
+        });
+        input.addEventListener('change', function() {
+            syncInput(input);
+        });
+    });
+});
+{{/js}}

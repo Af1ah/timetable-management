@@ -1,0 +1,130 @@
+/**
+ * Styles for local_timetable_management.
+ *
+ * Layout is controlled via two explicit wrapper classes added to every template:
+ *   .local-tt-page        — constrains the page content area width
+ *   .local-tt-table-wrap  — makes tables content-fit and centred
+ *
+ * Using explicit classes (not body-class selectors) guarantees the rules apply
+ * regardless of which Moodle theme layout or HTML structure is in use.
+ */
+
+/* ── Content area ────────────────────────────────────────────────── */
+
+/* md+ (≥768 px): break out of the theme's Bootstrap container and occupy 90vw */
+@media (min-width: 768px) {
+    .local-tt-page {
+        width: 90vw;
+        position: relative;
+        left: 50%;
+        transform: translateX(-50%);
+    }
+}
+
+/* xs–sm (<768 px): full width, no offset */
+@media (max-width: 767.98px) {
+    .local-tt-page {
+        width: 100%;
+        position: static;
+        transform: none;
+    }
+}
+
+/* ── Tables ──────────────────────────────────────────────────────── */
+
+/* Shrink wrapper to content, centre it, scroll horizontally on overflow */
+.local-tt-table-wrap {
+    width: fit-content !important;
+    max-width: 100%;
+    margin-inline: auto;
+    overflow-x: auto;
+}
+
+/* Override Bootstrap's forced width:100% on .table */
+.local-tt-table-wrap .table {
+    width: auto !important;
+}
+
+/* xs–sm: let the wrapper fill its container so scrolling still works */
+@media (max-width: 767.98px) {
+    .local-tt-table-wrap {
+        width: 100% !important;
+    }
+}
+
+/* ── Master timetable view — slot type badges ────────────────────── */
+
+.local-tt-slot-minor1 {
+    background-color: #cfe2ff;
+    color: #084298;
+    border-radius: .35rem;
+    padding: .2rem .5rem;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.local-tt-slot-minor2 {
+    background-color: #e2d9f3;
+    color: #41228e;
+    border-radius: .35rem;
+    padding: .2rem .5rem;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.local-tt-slot-mdc {
+    background-color: #fde68a;
+    color: #7c4a00;
+    border-radius: .35rem;
+    padding: .2rem .5rem;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.local-tt-slot-free {
+    color: #adb5bd;
+    font-size: .85em;
+}
+
+/* ── Table cell padding on larger screens ────────────────────────── */
+
+/* Generous padding for list/settings tables, but NOT the dept timetable */
+@media (min-width: 768px) {
+    .local-tt-table-wrap:not(.local-tt-dept-table) .table > :not(caption) > * > * {
+        padding: .75rem 1.25rem;
+    }
+}
+
+/* Dept timetable: stretch to fill the page container */
+.local-tt-dept-table {
+    width: 100% !important;
+}
+
+.local-tt-dept-table .table {
+    width: 100% !important;
+}
+
+/* Dept timetable: cells sized to a course shortname — no excess space */
+.local-tt-dept-table .table > :not(caption) > * > * {
+    padding: .2rem .3rem;
+    width: 10ch;
+    min-width: 8ch;
+    max-width: 10ch;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Edit-mode search input — match the cell width, don't expand it */
+.local-tt-dept-table .timetable-course-input {
+    width: 100%;
+    min-width: 0;
+    padding: .15rem .25rem;
+    font-size: .8rem;
+}
+
+/* ── Dual-listbox (courses page) ─────────────────────────────────── */
+
+.local-tt-page #assignform select {
+    height: 350px;
+}

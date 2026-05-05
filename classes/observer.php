@@ -14,12 +14,12 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
-namespace local_semester_management;
+namespace local_timetable_management;
 
 /**
- * Event observer for local_semester_management.
+ * Event observer for local_timetable_management.
  *
- * @package    local_semester_management
+ * @package    local_timetable_management
  * @copyright  2026 Your Name
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */

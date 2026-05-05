@@ -1,0 +1,83 @@
+{{!
+    @template local_timetable_management/timetable_page
+}}
+<div class="local-tt-page">
+
+<div class="mb-3 d-flex flex-wrap gap-2">
+    <a href="{{taburl}}" class="btn btn-primary">{{tablabel}}</a>
+    <a href="{{masterurl}}" class="btn btn-outline-primary">{{#str}} collegemastertimetable, local_timetable_management {{/str}}</a>
+</div>
+
+{{#issettings}}
+<form method="post" action="{{formaction}}">
+    <input type="hidden" name="sesskey" value="{{sesskey}}">
+    <input type="hidden" name="action" value="saveconfig">
+    <div class="local-tt-table-wrap table-responsive">
+        <table class="table table-bordered table-striped align-middle">
+            <thead>
+                <tr>
+                    <th scope="col">{{#str}} workingday, local_timetable_management {{/str}}</th>
+                    {{#headers}}
+                    <th scope="col">{{.}}</th>
+                    {{/headers}}
+                </tr>
+            </thead>
+            <tbody>
+                {{#rows}}
+                <tr>
+                    <td><input type="text" name="{{daylabelname}}" value="{{daylabelvalue}}" class="form-control"></td>
+                    {{#cells}}
+                    <td>
+                        <label class="form-label small text-muted">{{#str}} fromtime, local_timetable_management {{/str}}</label>
+                        <input type="time" name="{{fromname}}" value="{{fromvalue}}" class="form-control mb-2">
+                        <label class="form-label small text-muted">{{#str}} totime, local_timetable_management {{/str}}</label>
+                        <input type="time" name="{{toname}}" value="{{tovalue}}" class="form-control">
+                    </td>
+                    {{/cells}}
+                </tr>
+                {{/rows}}
+            </tbody>
+        </table>
+    </div>
+    <div class="mb-3 d-flex flex-wrap gap-2">
+        <button type="submit" name="gridaction" value="addday" class="btn btn-outline-primary">{{#str}} addworkingday, local_timetable_management {{/str}}</button>
+        <button type="submit" name="gridaction" value="removeday" class="btn btn-outline-secondary">{{#str}} removeworkingday, local_timetable_management {{/str}}</button>
+        <button type="submit" name="gridaction" value="addsection" class="btn btn-outline-primary">{{#str}} addsection, local_timetable_management {{/str}}</button>
+        <button type="submit" name="gridaction" value="removesection" class="btn btn-outline-secondary">{{#str}} removesection, local_timetable_management {{/str}}</button>
+    </div>
+    <button type="submit" class="btn btn-success">{{#str}} savechanges, local_timetable_management {{/str}}</button>
+</form>
+{{/issettings}}
+
+{{^issettings}}
+    {{^hasdepartments}}
+    <div class="alert alert-info" role="alert">
+        {{#str}} notimetabledepartments, local_timetable_management {{/str}}
+    </div>
+    {{/hasdepartments}}
+
+    {{#hasdepartments}}
+    <div class="local-tt-table-wrap table-responsive">
+        <table class="table table-bordered table-striped table-hover">
+            <thead>
+                <tr>
+                    <th scope="col">{{#str}} department, local_timetable_management {{/str}}</th>
+                    <th scope="col">{{#str}} activesections, local_timetable_management {{/str}}</th>
+                    <th scope="col">{{#str}} actions, local_timetable_management {{/str}}</th>
+                </tr>
+            </thead>
+            <tbody>
+                {{#rows}}
+                <tr>
+                    <td>{{departmentname}}</td>
+                    <td>{{programnames}}</td>
+                    <td><a href="{{manageurl}}" class="btn btn-sm btn-primary">{{#str}} manage, local_timetable_management {{/str}}</a></td>
+                </tr>
+                {{/rows}}
+            </tbody>
+        </table>
+    </div>
+    {{/hasdepartments}}
+{{/issettings}}
+
+</div>

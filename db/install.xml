@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" ?>
-<XMLDB PATH="local/semester_management/db" VERSION="20260502" COMMENT="XMLDB file for local_semester_management">
+<XMLDB PATH="local/timetable_management/db" VERSION="20260504" COMMENT="XMLDB file for local_timetable_management">
   <TABLES>
     <TABLE NAME="local_semester_status" COMMENT="Semester enable/disable status">
       <FIELDS>
@@ -29,6 +29,94 @@
       </KEYS>
       <INDEXES>
         <INDEX NAME="semester" UNIQUE="false" FIELDS="semester"/>
+      </INDEXES>
+    </TABLE>
+    <TABLE NAME="local_timetable_cfg" COMMENT="Department level timetable configuration">
+      <FIELDS>
+        <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true"/>
+        <FIELD NAME="departmentid" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false"/>
+        <FIELD NAME="sessioncount" TYPE="int" LENGTH="2" NOTNULL="true" DEFAULT="5" SEQUENCE="false"/>
+        <FIELD NAME="daystartmins" TYPE="int" LENGTH="5" NOTNULL="true" DEFAULT="570" SEQUENCE="false"/>
+        <FIELD NAME="sessionlength" TYPE="int" LENGTH="4" NOTNULL="true" DEFAULT="60" SEQUENCE="false"/>
+        <FIELD NAME="breakafter" TYPE="int" LENGTH="2" NOTNULL="true" DEFAULT="3" SEQUENCE="false"/>
+        <FIELD NAME="breaklength" TYPE="int" LENGTH="4" NOTNULL="true" DEFAULT="60" SEQUENCE="false"/>
+        <FIELD NAME="workingdays" TYPE="text" NOTNULL="false" SEQUENCE="false"/>
+        <FIELD NAME="sectiontimes" TYPE="text" NOTNULL="false" SEQUENCE="false"/>
+        <FIELD NAME="timecreated" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false"/>
+        <FIELD NAME="timemodified" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false"/>
+      </FIELDS>
+      <KEYS>
+        <KEY NAME="primary" TYPE="primary" FIELDS="id"/>
+        <KEY NAME="departmentid" TYPE="foreign-unique" FIELDS="departmentid" REFTABLE="course_categories" REFFIELDS="id"/>
+      </KEYS>
+    </TABLE>
+    <TABLE NAME="local_timetable_globalcfg" COMMENT="Shared timetable configuration for all departments">
+      <FIELDS>
+        <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true"/>
+        <FIELD NAME="sessioncount" TYPE="int" LENGTH="2" NOTNULL="true" DEFAULT="5" SEQUENCE="false"/>
+        <FIELD NAME="daystartmins" TYPE="int" LENGTH="5" NOTNULL="true" DEFAULT="570" SEQUENCE="false"/>
+        <FIELD NAME="sessionlength" TYPE="int" LENGTH="4" NOTNULL="true" DEFAULT="60" SEQUENCE="false"/>
+        <FIELD NAME="breakafter" TYPE="int" LENGTH="2" NOTNULL="true" DEFAULT="3" SEQUENCE="false"/>
+        <FIELD NAME="breaklength" TYPE="int" LENGTH="4" NOTNULL="true" DEFAULT="60" SEQUENCE="false"/>
+        <FIELD NAME="workingdays" TYPE="text" NOTNULL="false" SEQUENCE="false"/>
+        <FIELD NAME="sectiontimes" TYPE="text" NOTNULL="false" SEQUENCE="false"/>
+        <FIELD NAME="timecreated" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false"/>
+        <FIELD NAME="timemodified" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false"/>
+      </FIELDS>
+      <KEYS>
+        <KEY NAME="primary" TYPE="primary" FIELDS="id"/>
+      </KEYS>
+    </TABLE>
+    <TABLE NAME="local_timetable_slot" COMMENT="Saved timetable entries per department semester and slot">
+      <FIELDS>
+        <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true"/>
+        <FIELD NAME="departmentid" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false"/>
+        <FIELD NAME="semcategoryid" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false"/>
+        <FIELD NAME="weekday" TYPE="int" LENGTH="2" NOTNULL="true" DEFAULT="1" SEQUENCE="false"/>
+        <FIELD NAME="sessionindex" TYPE="int" LENGTH="3" NOTNULL="true" DEFAULT="1" SEQUENCE="false"/>
+        <FIELD NAME="courseid" TYPE="int" LENGTH="10" NOTNULL="false" SEQUENCE="false"/>
+        <FIELD NAME="timecreated" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false"/>
+        <FIELD NAME="timemodified" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false"/>
+      </FIELDS>
+      <KEYS>
+        <KEY NAME="primary" TYPE="primary" FIELDS="id"/>
+        <KEY NAME="departmentid" TYPE="foreign" FIELDS="departmentid" REFTABLE="course_categories" REFFIELDS="id"/>
+        <KEY NAME="semcategoryid" TYPE="foreign" FIELDS="semcategoryid" REFTABLE="course_categories" REFFIELDS="id"/>
+        <KEY NAME="courseid" TYPE="foreign" FIELDS="courseid" REFTABLE="course" REFFIELDS="id"/>
+      </KEYS>
+      <INDEXES>
+        <INDEX NAME="slotuniq" UNIQUE="true" FIELDS="departmentid, semcategoryid, weekday, sessionindex"/>
+      </INDEXES>
+    </TABLE>
+    <TABLE NAME="local_timetable_master_slot" COMMENT="College level reserved minor and MDC slots by semester">
+      <FIELDS>
+        <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true"/>
+        <FIELD NAME="semester" TYPE="int" LENGTH="2" NOTNULL="true" SEQUENCE="false" COMMENT="Semester number 1-8"/>
+        <FIELD NAME="weekday" TYPE="int" LENGTH="2" NOTNULL="true" DEFAULT="1" SEQUENCE="false"/>
+        <FIELD NAME="sessionindex" TYPE="int" LENGTH="3" NOTNULL="true" DEFAULT="1" SEQUENCE="false"/>
+        <FIELD NAME="coursetype" TYPE="char" LENGTH="20" NOTNULL="true" SEQUENCE="false" COMMENT="minor1, minor2, or mdc"/>
+        <FIELD NAME="timecreated" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false"/>
+        <FIELD NAME="timemodified" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false"/>
+      </FIELDS>
+      <KEYS>
+        <KEY NAME="primary" TYPE="primary" FIELDS="id"/>
+      </KEYS>
+      <INDEXES>
+        <INDEX NAME="masterslotuniq" UNIQUE="true" FIELDS="semester, weekday, sessionindex"/>
+      </INDEXES>
+    </TABLE>
+    <TABLE NAME="local_timetable_master_excl" COMMENT="Departments excluded from college master timetable by semester">
+      <FIELDS>
+        <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true"/>
+        <FIELD NAME="semester" TYPE="int" LENGTH="2" NOTNULL="true" SEQUENCE="false" COMMENT="Semester number 1-8"/>
+        <FIELD NAME="departmentid" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false"/>
+      </FIELDS>
+      <KEYS>
+        <KEY NAME="primary" TYPE="primary" FIELDS="id"/>
+        <KEY NAME="departmentid" TYPE="foreign" FIELDS="departmentid" REFTABLE="course_categories" REFFIELDS="id"/>
+      </KEYS>
+      <INDEXES>
+        <INDEX NAME="semesterdeptuniq" UNIQUE="true" FIELDS="semester, departmentid"/>
       </INDEXES>
     </TABLE>
   </TABLES>

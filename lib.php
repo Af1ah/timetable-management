@@ -15,9 +15,9 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Library functions for local_semester_management.
+ * Library functions for local_timetable_management.
  *
- * @package    local_semester_management
+ * @package    local_timetable_management
  * @copyright  2026 Your Name
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
@@ -31,17 +31,17 @@ defined('MOODLE_INTERNAL') || die();
  * @param stdClass $course
  * @param mixed $context
  */
-function local_semester_management_course_edit_form_definition(MoodleQuickForm $mform, $course, $context) {
-    $options = \local_semester_management\manager::get_semester_options(true);
+function local_timetable_management_course_edit_form_definition(MoodleQuickForm $mform, $course, $context) {
+    $options = \local_timetable_management\manager::get_semester_options(true);
 
-    $mform->addElement('header', 'local_semester_header', get_string('semester', 'local_semester_management'));
+    $mform->addElement('header', 'local_semester_header', get_string('semester', 'local_timetable_management'));
 
-    $mform->addElement('select', 'local_semester', get_string('selectsemester', 'local_semester_management'), $options);
-    $mform->addHelpButton('local_semester', 'selectsemester', 'local_semester_management');
+    $mform->addElement('select', 'local_semester', get_string('selectsemester', 'local_timetable_management'), $options);
+    $mform->addHelpButton('local_semester', 'selectsemester', 'local_timetable_management');
 
     // Set default value for existing course.
     if (!empty($course->id)) {
-        $assignment = \local_semester_management\manager::get_course_semester($course->id);
+        $assignment = \local_timetable_management\manager::get_course_semester($course->id);
         if ($assignment) {
             $mform->setDefault('local_semester', $assignment->semester);
         }
@@ -54,13 +54,13 @@ function local_semester_management_course_edit_form_definition(MoodleQuickForm $
  * @param stdClass $course
  * @param stdClass $data
  */
-function local_semester_management_course_edit_form_data(stdClass $course, stdClass $data) {
+function local_timetable_management_course_edit_form_data(stdClass $course, stdClass $data) {
     if (isset($data->local_semester)) {
         if (!empty($data->local_semester)) {
-            \local_semester_management\manager::set_course_semester($course->id, (int)$data->local_semester);
+            \local_timetable_management\manager::set_course_semester($course->id, (int)$data->local_semester);
         } else {
             // Remove semester assignment if "No semester" selected.
-            \local_semester_management\manager::remove_course_semester($course->id);
+            \local_timetable_management\manager::remove_course_semester($course->id);
         }
     }
 }

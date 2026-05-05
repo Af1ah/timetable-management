@@ -1,0 +1,39 @@
+{{!
+    @template local_timetable_management/programs_page
+}}
+<div class="local-tt-page">
+<div class="mb-3">
+    <a href="{{backurl}}" class="btn btn-secondary">{{#str}} back, local_timetable_management {{/str}}</a>
+</div>
+
+{{^hasprograms}}
+<div class="alert alert-info" role="alert">
+    {{#str}} noprograms, local_timetable_management {{/str}}
+</div>
+{{/hasprograms}}
+
+{{#hasprograms}}
+<div class="local-tt-table-wrap table-responsive">
+    <table class="table table-bordered table-striped table-hover">
+        <thead>
+            <tr>
+                <th scope="col">{{#str}} program, local_timetable_management {{/str}}</th>
+                <th scope="col">{{#str}} department, local_timetable_management {{/str}}</th>
+                <th scope="col">{{#str}} courses, local_timetable_management {{/str}}</th>
+                <th scope="col">{{#str}} actions, local_timetable_management {{/str}}</th>
+            </tr>
+        </thead>
+        <tbody>
+            {{#rows}}
+            <tr>
+                <td>{{programname}}</td>
+                <td>{{departmentname}}</td>
+                <td>{{coursecount}}</td>
+                <td><a href="{{manageurl}}" class="btn btn-sm btn-primary">{{#str}} manage, local_timetable_management {{/str}}</a></td>
+            </tr>
+            {{/rows}}
+        </tbody>
+    </table>
+</div>
+{{/hasprograms}}
+</div>

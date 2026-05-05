@@ -15,9 +15,9 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Event observers for local_semester_management.
+ * Event observers for local_timetable_management.
  *
- * @package    local_semester_management
+ * @package    local_timetable_management
  * @copyright  2026 Your Name
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
@@ -27,6 +27,6 @@ defined('MOODLE_INTERNAL') || die();
 $observers = [
     [
         'eventname' => '\core\event\course_deleted',
-        'callback' => '\local_semester_management\observer::course_deleted',
+        'callback' => '\local_timetable_management\observer::course_deleted',
     ],
 ];

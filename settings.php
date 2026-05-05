@@ -15,9 +15,9 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Admin settings for local_semester_management.
+ * Admin settings for local_timetable_management.
  *
- * @package    local_semester_management
+ * @package    local_timetable_management
  * @copyright  2026 Your Name
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
@@ -28,10 +28,21 @@ if ($hassiteconfig) {
     $ADMIN->add(
         'courses',
         new admin_externalpage(
-            'local_semester_management',
-            get_string('managesemesters', 'local_semester_management'),
-            new moodle_url('/local/semester_management/manage.php'),
-            'local/semester_management:manage'
+            'local_timetable_management',
+            get_string('managesemesters', 'local_timetable_management'),
+            new moodle_url('/local/timetable_management/manage.php'),
+            'local/timetable_management:manage'
         )
     );
+
+    $ADMIN->add(
+        'courses',
+        new admin_externalpage(
+            'local_timetable_management_timetable',
+            get_string('timetable', 'local_timetable_management'),
+            new moodle_url('/local/timetable_management/timetable.php'),
+            'local/timetable_management:manage'
+        )
+    );
+
 }

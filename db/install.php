@@ -17,7 +17,7 @@
 /**
  * Post-installation script to initialize semesters.
  *
- * @package    local_semester_management
+ * @package    local_timetable_management
  * @copyright  2026 Your Name
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
@@ -25,7 +25,7 @@
 /**
  * Initialize semester status records.
  */
-function xmldb_local_semester_management_install() {
+function xmldb_local_timetable_management_install() {
     global $DB;
 
     // Create status records for semesters 1-8.

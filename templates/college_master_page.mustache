@@ -1,0 +1,167 @@
+{{!
+    @template local_timetable_management/college_master_page
+}}
+<div class="local-tt-page">
+
+<div class="mb-3">
+    <a href="{{backurl}}" class="btn btn-secondary">{{#str}} back, local_timetable_management {{/str}}</a>
+</div>
+
+{{#islist}}
+    {{^hassemesters}}
+    <div class="alert alert-info" role="alert">
+        {{#str}} nomastertimetablesemesters, local_timetable_management {{/str}}
+    </div>
+    {{/hassemesters}}
+
+    {{#hassemesters}}
+    <h3>{{#str}} activesemesters, local_timetable_management {{/str}}</h3>
+    {{#isediting}}
+    <form method="post" action="{{listformaction}}">
+        <input type="hidden" name="sesskey" value="{{sesskey}}">
+        <input type="hidden" name="action" value="saveexcludeddepartments">
+    {{/isediting}}
+    <div class="local-tt-table-wrap table-responsive">
+        <table class="table table-bordered table-striped table-hover">
+            <thead>
+                <tr>
+                    <th scope="col">{{#str}} semester, local_timetable_management {{/str}}</th>
+                    <th scope="col">{{#str}} excludeddepartmentslabel, local_timetable_management {{/str}}</th>
+                    <th scope="col">{{#str}} actions, local_timetable_management {{/str}}</th>
+                </tr>
+            </thead>
+            <tbody>
+                {{#semesters}}
+                <tr>
+                    <td>{{name}}</td>
+                    <td>
+                        {{#isediting}}
+                        <div class="d-flex flex-wrap gap-3">
+                            {{#departmentoptions}}
+                            <label class="form-check-label d-inline-flex align-items-center gap-1">
+                                <input type="checkbox"
+                                       class="form-check-input mt-0"
+                                       name="departments[{{semesterid}}][]"
+                                       value="{{id}}"
+                                       {{#checked}}checked{{/checked}}>
+                                <span>{{name}}</span>
+                            </label>
+                            {{/departmentoptions}}
+                        </div>
+                        {{/isediting}}
+                        {{^isediting}}
+                        {{#hasexcludeddepartments}}
+                        <div class="d-flex flex-wrap gap-2">
+                            {{#excludeddepartments}}
+                            <span class="badge text-bg-warning">{{name}}</span>
+                            {{/excludeddepartments}}
+                        </div>
+                        {{/hasexcludeddepartments}}
+                        {{^hasexcludeddepartments}}-{{/hasexcludeddepartments}}
+                        {{/isediting}}
+                    </td>
+                    <td><a href="{{manageurl}}" class="btn btn-sm btn-primary">{{#str}} manage, local_timetable_management {{/str}}</a></td>
+                </tr>
+                {{/semesters}}
+            </tbody>
+        </table>
+    </div>
+    {{#isediting}}
+    <div class="mt-3">
+        <button type="submit" class="btn btn-success">{{#str}} savetimetable, local_timetable_management {{/str}}</button>
+    </div>
+    </form>
+    {{/isediting}}
+    {{/hassemesters}}
+{{/islist}}
+
+{{#isform}}
+<h3>{{selectedsemesterheading}}</h3>
+<form method="post" action="{{formaction}}">
+    <input type="hidden" name="sesskey" value="{{sesskey}}">
+    <input type="hidden" name="action" value="savemastertable">
+
+    {{#hasexcludeddepartments}}
+    <div class="mb-3">
+        <strong>{{#str}} excludeddepartmentslabel, local_timetable_management {{/str}}</strong>
+        <div class="mt-2 d-flex flex-wrap gap-2" data-excluded-departments>
+            {{#excludeddepartments}}
+            <span class="badge text-bg-warning d-inline-flex align-items-center gap-2" data-excluded-department>
+                <span>{{name}}</span>
+                <input type="hidden" name="excludeddepartments[]" value="{{id}}">
+                {{#isediting}}
+                <button type="button"
+                        class="btn-close btn-close-sm"
+                        aria-label="{{#str}} removedepartment, local_timetable_management {{/str}}"
+                        data-remove-excluded-department></button>
+                {{/isediting}}
+            </span>
+            {{/excludeddepartments}}
+        </div>
+        {{#isediting}}
+        <div class="form-text">{{#str}} excludeddepartmentshelp, local_timetable_management {{/str}}</div>
+        {{/isediting}}
+    </div>
+    {{/hasexcludeddepartments}}
+
+    <div class="local-tt-table-wrap table-responsive">
+        <table class="table table-bordered table-striped align-middle">
+            <thead>
+                <tr>
+                    <th scope="col">{{#str}} weekday, local_timetable_management {{/str}}</th>
+                    {{#headers}}
+                    <th scope="col">{{{labelhtml}}}</th>
+                    {{/headers}}
+                </tr>
+            </thead>
+            <tbody>
+                {{#rows}}
+                <tr>
+                    <td>{{daylabel}}</td>
+                    {{#cells}}
+                    <td>
+                        <select name="{{selectname}}" class="form-select" title="{{title}}">
+                            {{#options}}
+                            <option value="{{value}}" {{#selected}}selected{{/selected}}>{{label}}</option>
+                            {{/options}}
+                        </select>
+                    </td>
+                    {{/cells}}
+                </tr>
+                {{/rows}}
+            </tbody>
+        </table>
+    </div>
+
+    {{^hascourseinfo}}
+    <div class="alert alert-warning mt-3" role="alert">
+        {{#str}} nomastercoursetypes, local_timetable_management {{/str}}
+    </div>
+    {{/hascourseinfo}}
+
+    {{#hascourseinfo}}
+    <ul class="mt-3">
+        {{#courseinfoitems}}
+        <li><strong>{{typename}}:</strong> {{tooltip}}</li>
+        {{/courseinfoitems}}
+    </ul>
+    {{/hascourseinfo}}
+
+    <button type="submit" class="btn btn-success mt-3">{{#str}} savetimetable, local_timetable_management {{/str}}</button>
+</form>
+{{/isform}}
+
+</div>
+
+{{#js}}
+require([], function() {
+    document.querySelectorAll('[data-remove-excluded-department]').forEach(function(button) {
+        button.addEventListener('click', function() {
+            var item = button.closest('[data-excluded-department]');
+            if (item) {
+                item.remove();
+            }
+        });
+    });
+});
+{{/js}}

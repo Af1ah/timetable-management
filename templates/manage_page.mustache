@@ -1,0 +1,40 @@
+{{!
+    @template local_timetable_management/manage_page
+}}
+<div class="local-tt-page">
+<div class="local-tt-table-wrap table-responsive">
+    <table class="table table-bordered table-striped table-hover">
+        <thead>
+            <tr>
+                <th scope="col">{{#str}} semester, local_timetable_management {{/str}}</th>
+                <th scope="col">{{#str}} status, local_timetable_management {{/str}}</th>
+                <th scope="col">{{#str}} courses, local_timetable_management {{/str}}</th>
+                <th scope="col">{{#str}} actions, local_timetable_management {{/str}}</th>
+            </tr>
+        </thead>
+        <tbody>
+            {{#rows}}
+            <tr>
+                <td>{{semestername}}</td>
+                <td>
+                    {{#isenabled}}
+                    <span class="badge bg-success">{{#str}} enabled, local_timetable_management {{/str}}</span>
+                    {{/isenabled}}
+                    {{^isenabled}}
+                    <span class="badge bg-danger">{{#str}} disabled, local_timetable_management {{/str}}</span>
+                    {{/isenabled}}
+                </td>
+                <td><a href="{{coursesurl}}">{{coursecountlabel}}</a></td>
+                <td>
+                    <div class="d-flex flex-wrap gap-2">
+                        {{#actions}}
+                        <a href="{{url}}" class="{{class}}">{{label}}</a>
+                        {{/actions}}
+                    </div>
+                </td>
+            </tr>
+            {{/rows}}
+        </tbody>
+    </table>
+</div>
+</div>

@@ -1,0 +1,79 @@
+{{!
+    @template local_timetable_management/courses_page
+}}
+<div class="local-tt-page">
+<div class="mb-3">
+    <a href="{{backurl}}" class="btn btn-secondary">{{#str}} back, local_timetable_management {{/str}}</a>
+</div>
+
+{{#semesterdisabled}}
+<div class="alert alert-warning" role="alert">
+    {{#str}} courseshidden, local_timetable_management {{/str}}
+</div>
+{{/semesterdisabled}}
+
+<form method="post" action="{{formaction}}" id="assignform" class="mform">
+    <input type="hidden" name="sesskey" value="{{sesskey}}">
+    <div class="row g-3 align-items-start">
+        <div class="col-lg-5">
+            <h4>{{#str}} availablecourses, local_timetable_management {{/str}}</h4>
+            <div class="mb-2">
+                <input type="text" id="search-available" class="form-control" placeholder="{{searchlabel}}">
+            </div>
+            <select name="addselect[]" id="addselect" multiple size="15" class="form-select">
+                {{#availablecourses}}
+                <option value="{{id}}" data-shortname="{{shortname}}" data-fullname="{{fullname}}">{{label}}</option>
+                {{/availablecourses}}
+            </select>
+        </div>
+
+        <div class="col-lg-2 d-flex flex-column justify-content-center align-items-center gap-2">
+            <button type="submit" name="add" value="1" class="btn btn-success w-100">{{#str}} add, core {{/str}} &rarr;</button>
+            <button type="submit" name="remove" value="1" class="btn btn-danger w-100">&larr; {{#str}} remove, local_timetable_management {{/str}}</button>
+        </div>
+
+        <div class="col-lg-5">
+            <h4>{{#str}} assignedcourses, local_timetable_management {{/str}}</h4>
+            <div class="mb-2">
+                <input type="text" id="search-assigned" class="form-control" placeholder="{{searchlabel}}">
+            </div>
+            <select name="removeselect[]" id="removeselect" multiple size="15" class="form-select">
+                {{#assignedcourses}}
+                <option value="{{id}}" data-shortname="{{shortname}}" data-fullname="{{fullname}}">{{label}}</option>
+                {{/assignedcourses}}
+            </select>
+        </div>
+    </div>
+</form>
+
+{{#js}}
+require([], function() {
+    function filterSelect(searchInput, selectBox) {
+        var filter = searchInput.value.toLowerCase();
+        Array.prototype.forEach.call(selectBox.options, function(option) {
+            var shortname = option.getAttribute('data-shortname') || '';
+            var fullname = option.getAttribute('data-fullname') || '';
+            var text = option.text.toLowerCase();
+            option.hidden = !(shortname.indexOf(filter) > -1 || fullname.indexOf(filter) > -1 || text.indexOf(filter) > -1);
+        });
+    }
+
+    var searchAvailable = document.getElementById('search-available');
+    var addSelect = document.getElementById('addselect');
+    var searchAssigned = document.getElementById('search-assigned');
+    var removeSelect = document.getElementById('removeselect');
+
+    if (searchAvailable && addSelect) {
+        searchAvailable.addEventListener('input', function() {
+            filterSelect(searchAvailable, addSelect);
+        });
+    }
+
+    if (searchAssigned && removeSelect) {
+        searchAssigned.addEventListener('input', function() {
+            filterSelect(searchAssigned, removeSelect);
+        });
+    }
+});
+{{/js}}
+</div>

@@ -15,10 +15,10 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Main management page for semesters.
+ * Programs page — lists all programs (categories matching *-semN) for a semester.
  *
  * @package    local_timetable_management
- * @copyright  2026 Your Name
+ * @copyright  2026 Af1ah
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 
@@ -27,37 +27,27 @@ require_once($CFG->libdir . '/adminlib.php');
 
 use local_timetable_management\manager;
 
-$action = optional_param('action', '', PARAM_ALPHA);
-$semester = optional_param('semester', 0, PARAM_INT);
+$semester = required_param('semester', PARAM_INT);
+
+if (!manager::is_valid_semester($semester)) {
+    throw new moodle_exception('invalidsemester', 'local_timetable_management');
+}
 
 admin_externalpage_setup('local_timetable_management');
 
 $context = context_system::instance();
 require_capability('local/timetable_management:manage', $context);
 
-$baseurl = new moodle_url('/local/timetable_management/manage.php');
-$PAGE->set_url($baseurl);
+$PAGE->set_url(new moodle_url('/local/timetable_management/programs.php', ['semester' => $semester]));
 
-// Handle enable/disable actions.
-if ($action === 'enable' && $semester && confirm_sesskey()) {
-    manager::enable_semester($semester);
-    redirect($baseurl, get_string('semesterenabled', 'local_timetable_management', $semester),
-        null, \core\output\notification::NOTIFY_SUCCESS);
-}
+$semestername = manager::get_semester_name($semester);
+$manageurl = new moodle_url('/local/timetable_management/manage.php');
 
-if ($action === 'disable' && $semester && confirm_sesskey()) {
-    manager::disable_semester($semester);
-    redirect($baseurl, get_string('semesterdisabled', 'local_timetable_management', $semester),
-        null, \core\output\notification::NOTIFY_WARNING);
-}
-
-// Display main page.
 echo $OUTPUT->header();
-echo $OUTPUT->heading(get_string('managesemesters', 'local_timetable_management'));
+echo $OUTPUT->heading(get_string('programsinsemester', 'local_timetable_management', $semestername));
 
-$statuses = manager::get_all_semester_statuses();
+$programs = manager::get_semester_programs($semester);
 
 $output = $PAGE->get_renderer('local_timetable_management');
-echo $output->render(new \local_timetable_management\output\manage_page($statuses, $baseurl));
-
+echo $output->render(new \local_timetable_management\output\programs_page($semester, $programs, $manageurl));
 echo $OUTPUT->footer();
