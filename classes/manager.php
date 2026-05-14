@@ -1756,6 +1756,21 @@ class manager {
     }
 
     /**
+     * Return midnight of the current Saturday (user timezone).
+     * If today IS Saturday, returns today's midnight.
+     * If today is any other day, returns the upcoming Saturday's midnight.
+     *
+     * @return int Unix timestamp
+     */
+    public static function get_next_saturday(): int {
+        $now = time();
+        // %u: 1=Monday … 6=Saturday, 7=Sunday (ISO numeric weekday).
+        $dayofweek = (int) userdate($now, '%u');
+        $daysuntilsat = (6 - $dayofweek + 7) % 7; // 0 when today is Saturday.
+        return usergetmidnight($now + ($daysuntilsat * DAYSECS));
+    }
+
+    /**
      * Check whether the attendance activity plugin is installed.
      *
      * @return bool

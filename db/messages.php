@@ -15,7 +15,7 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 /**
- * Plugin version information.
+ * Message providers for local_timetable_management.
  *
  * @package    local_timetable_management
  * @copyright  2026 Your Name
@@ -24,11 +24,12 @@
 
 defined('MOODLE_INTERNAL') || die();
 
-$plugin->component = 'local_timetable_management';
-$plugin->version = 2026050406;
-$plugin->requires = 2024042200;
-$plugin->maturity = MATURITY_STABLE;
-$plugin->release = '1.0.0';
-$plugin->dependencies = [
-    'local_admission' => 2026041701,
+$messageproviders = [
+    'attendancesync' => [
+        'capability' => 'moodle/site:config',
+        'defaults' => [
+            'popup' => MESSAGE_PERMITTED + MESSAGE_DEFAULT_LOGGEDIN + MESSAGE_DEFAULT_LOGGEDOFF,
+            'email' => MESSAGE_PERMITTED + MESSAGE_DEFAULT_LOGGEDIN + MESSAGE_DEFAULT_LOGGEDOFF,
+        ],
+    ],
 ];

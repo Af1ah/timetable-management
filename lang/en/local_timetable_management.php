@@ -131,7 +131,8 @@ $string['searchcourse'] = 'Search course';
 $string['nocourseassigned'] = 'No course assigned';
 $string['generateattendancesessions'] = 'Generate attendance sessions';
 $string['generateattendancesessionsfor'] = 'Generate attendance sessions for {$a}';
-$string['generateattendancesessions_help'] = 'Choose the first date and how many days to scan. The form will create missing attendance activities when needed and add any missing sessions from the saved timetable.';
+$string['generateattendancesessions_help'] = 'Submitting this form queues one immediate task covering today through this Saturday, then one additional task per future Saturday you select below. Each Saturday task will not run until its scheduled date, keeping attendance sessions clean and non-overlapping.';
+$string['attendanceimmediatetask'] = 'An immediate task will be queued covering <strong>today through {$a->date}</strong> ({$a->days} day(s)). Subsequent tasks each cover 7 days starting from their Saturday.';
 $string['attendancestartdate'] = 'Start date';
 $string['attendancedurationdays'] = 'Duration in days';
 $string['attendancedurationdaysinvalid'] = 'Duration must be at least 1 day.';
@@ -162,6 +163,26 @@ $string['mastertimedepartmenthelp'] = 'Reserved slots from the college master ti
 $string['removedepartment'] = 'Remove department';
 $string['invaliddepartment'] = 'Invalid department';
 $string['invalidtimevalue'] = 'Invalid time settings';
+
+// Attendance ad hoc task & notifications.
+$string['task_syncattendancesessions'] = 'Attendance session sync';
+$string['task_syncnotify_subject'] = 'Attendance sync completed for {$a}';
+$string['task_syncnotify_failsubject'] = 'Attendance sync completed with errors for {$a}';
+$string['task_syncnotify_body'] = 'Department: {$a->department}
+Period: {$a->startdate} ({$a->days} day(s))
+
+Statistics:
+  Sessions tried:               {$a->tried}
+  Sessions created:             {$a->created}
+  Sessions skipped (duplicate): {$a->skipped}
+  Sessions failed:              {$a->failed}';
+$string['task_syncnotify_errors'] = 'Error details:';
+$string['attendancetasksqueued'] = '{$a} attendance sync task(s) queued. The immediate task will run on the next cron cycle. Future Saturday tasks will not execute until their scheduled date. Site admins will be notified with statistics after each run.';
+$string['attendanceweeksahead'] = 'Also schedule for next Saturdays';
+$string['attendanceweeksahead_help'] = 'Each additional week queues one task scheduled to run on its Saturday, covering that Saturday plus the 6 days that follow. This prevents overlapping sessions — each week is processed exactly once. Set to "None" to queue only the single immediate run.';
+$string['attendanceweeksahead_none'] = 'None (immediate run only)';
+$string['attendanceweeksahead_n'] = '{$a} more Saturday(s)';
+$string['messageprovider:attendancesync'] = 'Attendance sync notifications';
 
 // Errors.
 $string['invalidsemester'] = 'Invalid semester';

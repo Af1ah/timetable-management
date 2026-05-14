@@ -18,37 +18,7 @@ require_once(__DIR__ . '/../../config.php');
 
 use local_timetable_management\manager;
 use local_timetable_management\form\attendance_sync_form;
-
-/**
- * Build the attendance sync result message.
- *
- * @param object $summary
- * @return string
- */
-function local_timetable_management_build_attendance_message(object $summary): string {
-    $parts = [];
-
-    $parts[] = get_string('attendancesummarycreated', 'local_timetable_management', (object) [
-        'sessions' => (int) $summary->sessionscreated,
-        'courses' => (int) $summary->coursesprocessed,
-    ]);
-
-    if (!empty($summary->attendancecreated)) {
-        $parts[] = get_string('attendancesummaryinstances', 'local_timetable_management',
-            (int) $summary->attendancecreated);
-    }
-
-    if (!empty($summary->duplicateskipped)) {
-        $parts[] = get_string('attendancesummaryduplicates', 'local_timetable_management',
-            (int) $summary->duplicateskipped);
-    }
-
-    if (!empty($summary->errors)) {
-        $parts[] = get_string('attendancesummaryerrors', 'local_timetable_management', implode(' ', $summary->errors));
-    }
-
-    return implode(' ', $parts);
-}
+use local_timetable_management\task\sync_attendance_sessions;
 
 $departmentid = required_param('departmentid', PARAM_INT);
 
@@ -87,26 +57,49 @@ if ($mform->is_cancelled()) {
 }
 
 if ($data = $mform->get_data()) {
-    $summary = manager::sync_department_attendance_sessions(
-        $departmentid,
-        (int) $data->startdate,
-        (int) $data->durationdays
+    $weeksahead = max(0, (int) ($data->weeksahead ?? 0));
+
+    // Compute the window for the immediate task: today → this Saturday (inclusive).
+    $todaymidnight   = usergetmidnight(time());
+    $thissatmidnight = manager::get_next_saturday();
+    $daystilsat      = (int) round(($thissatmidnight - $todaymidnight) / DAYSECS);
+    $firstduration   = max(1, $daystilsat + 1);
+
+    // Task 0 — runs on the next cron tick, covers the current week up to this Saturday.
+    $task = new sync_attendance_sessions();
+    $task->set_custom_data([
+        'departmentid' => $departmentid,
+        'startdate'    => $todaymidnight,
+        'durationdays' => $firstduration,
+    ]);
+    \core\task\manager::queue_adhoc_task($task, true);
+
+    // Tasks 1..N — each scheduled to execute on its own Saturday morning, covering that
+    // Saturday + the 6 following days (a clean, non-overlapping 7-day window per week).
+    $nextsatmidnight = $thissatmidnight + WEEKSECS;
+    for ($week = 1; $week <= $weeksahead; $week++) {
+        $satstart = $nextsatmidnight + (($week - 1) * WEEKSECS);
+        $weektask = new sync_attendance_sessions();
+        $weektask->set_custom_data([
+            'departmentid' => $departmentid,
+            'startdate'    => $satstart,
+            'durationdays' => 7,
+        ]);
+        $weektask->set_next_run_time($satstart); // cron will not run this before its Saturday.
+        \core\task\manager::queue_adhoc_task($weektask, true);
+    }
+
+    $taskcount = 1 + $weeksahead;
+    redirect(
+        $backurl,
+        get_string('attendancetasksqueued', 'local_timetable_management', $taskcount),
+        null,
+        \core\output\notification::NOTIFY_SUCCESS
     );
-
-    $messagetype = \core\output\notification::NOTIFY_INFO;
-    if (!empty($summary->errors) || ((int) $summary->sessionscreated === 0 && (int) $summary->duplicateskipped === 0)) {
-        $messagetype = \core\output\notification::NOTIFY_WARNING;
-    }
-    if ((int) $summary->sessionscreated > 0) {
-        $messagetype = \core\output\notification::NOTIFY_SUCCESS;
-    }
-
-    redirect($backurl, local_timetable_management_build_attendance_message($summary), null, $messagetype);
 }
 
 echo $OUTPUT->header();
 echo $OUTPUT->heading(get_string('generateattendancesessionsfor', 'local_timetable_management',
     format_string($department->name)));
-echo $OUTPUT->notification(get_string('generateattendancesessions_help', 'local_timetable_management'), 'info');
 $mform->display();
 echo $OUTPUT->footer();
